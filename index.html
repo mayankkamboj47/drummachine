@@ -3,8 +3,82 @@
     <head>
         <meta charset="utf-8" />
         <title>Drum Machine</title>
+        <style>
+            *,*::before,*::after{
+                box-sizing:border-box;
+            }
+            body{
+                max-width: 100%;
+                overflow: hidden;
+            }
+            .buttons{
+                display: flex;
+                flex-wrap:wrap;
+            }
+            .btn{
+                background-color: whitesmoke;
+                border:1px solid transparent;
+                background-clip:content-box;
+            }
+            .btn.active{
+                background-color: black;
+            }
+            .btn.playing{
+                background-color: pink;
+            }
+            .btn.active.playing{
+                background-color:violet;
+            }
+            .pauseplay{
+                width:100px;
+                height:100px;
+                position:relative;
+                margin-left:auto;
+            }
+            .pauseplay::after{
+                position: absolute;
+                top:50%;
+                left:50%;
+                transform:translate(-50%,-50%);
+                content:' ';
+                display:block;
+                width:0;
+                z-index: 1;
+                box-sizing: border-box;
+                border:25px solid black;
+            }
+            .pauseplay.playing{
+            }
+            .pauseplay.playing::after{
+                position: absolute;
+                top:50%;
+                left:50%;
+                transform:translate(0%,-50%) scaleX(2);
+                content:' ';
+                display:block;
+                width:0;
+                z-index: 1;
+                box-sizing: border-box;
+                border:25px solid transparent;
+                border-left-color:black;
+          }
+            .music-machine{
+                display:flex;
+            }
+            .key{
+                display:flex;
+                background-color:teal;
+                justify-content:center;
+                align-items:center;
+                font-family: sans-serif;
+                font-weight:bolder;
+                color:white;
+            }
+        </style>
     </head>
     <body>
+        <div id='mountpoint'>
+            </div>
         <script src='./script.js'>
             </script>
     </body>
