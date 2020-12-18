@@ -1,10 +1,11 @@
 /*
 To do : 
 1. Make the music stop as soon as next step is reached.  Done
-2. Make 2 kinds of notes. Sustained ones, and simple ones. 
+2. Make 2 kinds of notes. Sustained ones, and simple ones. Done
 3. Add support for custom machine width. 
 4. Add support for custom tempo.
 5. See if you can add music keys of other octaves. 
+6. Ability to export the matrix and import other matrices. 
 */
 
 let keys = {
@@ -154,7 +155,6 @@ let keys = {
             this.machine = MusicMachine.from(newState);    
         }
     }
-    window.oncontextmenu = ()=>false;
     let machine = new MusicMachine(30);
     let md = new MachineDisplay(machine,document.body);
 `   class MachineDOM {
