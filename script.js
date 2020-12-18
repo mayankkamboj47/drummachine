@@ -1,6 +1,6 @@
 /*
 To do : 
-1. Make the music stop as soon as next step is reached. 
+1. Make the music stop as soon as next step is reached.  Done
 2. Make 2 kinds of notes. Sustained ones, and simple ones. 
 3. Add support for custom machine width. 
 4. Add support for custom tempo.
@@ -49,9 +49,15 @@ let keys = {
         next() {
             if (this.playing) {
                 for (let [index, file] of musicfiles.entries()) {
-                    file.load(); //resets the file
-                    if (this.matrix.get(this.position, index)) {
-                        file.play();
+                    let v;
+                    if (v=this.matrix.get(this.position, index)) {
+                        if(v==1){
+                            file.load();
+                            file.play();
+                        }
+                    }
+                    else{
+                        file.load();
                     }
                 }
                 this.position = (this.position + 1) % this.matrix.columns;
@@ -72,7 +78,7 @@ let keys = {
             return m;
         }
     }
-
+    MusicMachine.prototype.types = 3; //total different kinds of values our grid can take
     function elt(name, attrs = {}, ...elements) {
         let element = document.createElement(name);
         for (let attr of Object.keys(attrs)) {
@@ -94,8 +100,11 @@ let keys = {
                 let x = elt('div',{class:'box'});
                 let xpos = ind%machine.matrix.columns;
                 let ypos = (ind-xpos)/machine.matrix.columns;
-                x.addEventListener('click',()=>{
-                    let req = {matrix:this.machine.matrix.set(xpos,ypos,!this.machine.matrix.get(xpos,ypos))};
+                x.addEventListener('click',(e)=>{
+                    e.preventDefault(); //prevent right click menu 
+                    e.stopPropagation();
+                    let v = (this.machine.matrix.get(xpos,ypos)+1)%this.machine.types;
+                    let req = {matrix:this.machine.matrix.set(xpos,ypos,v)};
                     this.requestStateChange(req);
                 });
                 return x;
@@ -133,6 +142,7 @@ let keys = {
                     let v = newState.matrix.get(x,y);
                     if(v) classNames.push('active');
                     if(x==newState.position) classNames.push('playing');
+                    if(v==2) classNames.push('sustain');
                     this.boxes[x+y*newState.matrix.columns].setAttribute('class',classNames.join(' '));
                 }
             }
@@ -144,6 +154,7 @@ let keys = {
             this.machine = MusicMachine.from(newState);    
         }
     }
+    window.oncontextmenu = ()=>false;
     let machine = new MusicMachine(30);
     let md = new MachineDisplay(machine,document.body);
 `   class MachineDOM {
