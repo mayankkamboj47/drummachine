@@ -49,8 +49,8 @@ let keys = {
         next() {
             if (this.playing) {
                 for (let [index, file] of musicfiles.entries()) {
+                    file.load(); //resets the file
                     if (this.matrix.get(this.position, index)) {
-                        file.load(); //resets the file
                         file.play();
                     }
                 }
