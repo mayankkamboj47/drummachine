@@ -13,8 +13,11 @@
             }
             .gridboxes{
                 display:flex;
-                flex-wrap:wrap;
-                flex-direction: row;
+                flex-direction: column;
+            }
+            .boxrow{
+                display:flex;
+                flex-direction:row;
             }
             .box{
                 width:var(--scale);
@@ -38,7 +41,8 @@
             .pauseplay{
                 width:100px;
                 height:100px;
-                position:relative;
+                position:fixed;
+                bottom:0;
                 margin-left:auto;
             }
             .pauseplay::after{
@@ -70,6 +74,9 @@
           }
             .machine{
                 display:flex;
+            }
+            .machinemount{
+                overflow:auto;
             }
             .key{
                 display:flex;

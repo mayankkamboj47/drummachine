@@ -2,10 +2,11 @@
 To do : 
 1. Make the music stop as soon as next step is reached.  Done
 2. Make 2 kinds of notes. Sustained ones, and simple ones. Done
-3. Add support for custom machine width. 
-4. Add support for custom tempo.
+3. Add support for custom machine width. Done 
+4. Add support for custom tempo. 
 5. See if you can add music keys of other octaves. 
 6. Ability to export the matrix and import other matrices. 
+7. Bug : file performance is not good because of poor mp3 files and resetting without checking perhaps. 
 */
 
 let keys = {
@@ -54,10 +55,11 @@ let keys = {
                     if (v=this.matrix.get(this.position, index)) {
                         if(v==1){
                             file.load();
-                            file.play();
+                            file.play(); 
                         }
                     }
                     else{
+                        //see if you can check whether a file is actually playing before loading it
                         file.load();
                     }
                 }
@@ -80,6 +82,7 @@ let keys = {
         }
     }
     MusicMachine.prototype.types = 3; //total different kinds of values our grid can take
+    //see if this is even needed,that is, whether you wil ever change this number. 
     function elt(name, attrs = {}, ...elements) {
         let element = document.createElement(name);
         for (let attr of Object.keys(attrs)) {
@@ -110,7 +113,12 @@ let keys = {
                 });
                 return x;
             });
-            let boxcont = elt('div',{class:'gridboxes'},...this.boxes);
+            let boxrows = [];
+            for(let i=0;i<machine.matrix.rows;i++){
+                let row = elt('div',{class:'boxrow'},...this.boxes.slice(i*machine.matrix.columns,(i+1)*machine.matrix.columns));
+                boxrows.push(row);
+            }
+            let boxcont = elt('div',{class:'gridboxes'},...boxrows);
             boxcont.style.width = `${40*machine.matrix.columns}px`;
             let keyboxes = elt('div',{class:'keys'},...Object.keys(keys).map(a=>elt('div',{class:'key'},a)));
             let pauseplay = elt('div',{class:'pauseplay'});
@@ -155,8 +163,38 @@ let keys = {
             this.machine = MusicMachine.from(newState);    
         }
     }
-    let machine = new MusicMachine(30);
-    let md = new MachineDisplay(machine,document.body);
+    class UserInterface{
+        constructor(){
+            this.machinemount = elt('div');
+            this.dom = elt('div',{class:'machinemount'});
+            this.globals = {
+                machine_width : 30
+            };
+            document.body.appendChild(this.dom);
+            this.render();
+            this.recreateMachine();
+        }
+        render(){
+            let i = elt('input',{type:'number',value:this.globals.machine_width});
+            i.addEventListener('change',(a)=>this.width_change(a.target.value));
+            this.dom.appendChild(i);
+        }
+        width_change(v){
+            v = parseInt(v);
+            this.globals.machine_width = v;
+            this.recreateMachine();
+        }
+        recreateMachine(){
+            if(this.md){
+                this.md.dom.remove();
+            }
+            let newmachine = new MusicMachine(this.globals.machine_width);
+            this.md = new MachineDisplay(newmachine,this.dom);
+        }
+    }
+    let ui = new UserInterface();
+    //let machine = new MusicMachine(30);
+    //let md = new MachineDisplay(machine,document.body);
 `   class MachineDOM {
         constructor(machine, parent) {
             this.machine = machine;
