@@ -11,22 +11,25 @@
                 max-width: 100%;
                 overflow: hidden;
             }
-            .buttons{
-                display: flex;
+            .gridboxes{
+                display:flex;
                 flex-wrap:wrap;
+                flex-direction: row;
             }
-            .btn{
+            .box{
+                width:var(--scale);
+                height:var(--scale);
                 background-color: whitesmoke;
                 border:1px solid transparent;
                 background-clip:content-box;
             }
-            .btn.active{
+            .box.active{
                 background-color: black;
             }
-            .btn.playing{
+            .box.playing{
                 background-color: pink;
             }
-            .btn.active.playing{
+            .box.active.playing{
                 background-color:violet;
             }
             .pauseplay{
@@ -62,7 +65,7 @@
                 border:25px solid transparent;
                 border-left-color:black;
           }
-            .music-machine{
+            .machine{
                 display:flex;
             }
             .key{
@@ -73,6 +76,8 @@
                 font-family: sans-serif;
                 font-weight:bolder;
                 color:white;
+                height:var(--scale);
+                width:var(--scale);
             }
         </style>
     </head>

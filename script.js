@@ -1,127 +1,190 @@
-    let keys = {
-        'C':'./music/c.wav',
-        'C#':'./music/cs.wav',
-        'D':'./music/d.wav',
-        'D#':'./music/eb.wav',
-        'E':'./music/e.wav',
-        'F':'./music/f.wav',
-        'F#':'./music/fs.wav',
-        'G':'./music/g.wav',
-        'G#':'./music/gs.wav',
-        'A':'./music/a.wav',
-        'A#':'./music/bb.wav',
-        'B':'./music/b.wav'
+/*
+To do : 
+1. Make the music stop as soon as next step is reached. 
+2. Make 2 kinds of notes. Sustained ones, and simple ones. 
+3. Add support for custom machine width. 
+4. Add support for custom tempo.
+5. See if you can add music keys of other octaves. 
+*/
+
+let keys = {
+        'C': './music/c.wav',
+        'C#': './music/cs.wav',
+        'D': './music/d.wav',
+        'D#': './music/eb.wav',
+        'E': './music/e.wav',
+        'F': './music/f.wav',
+        'F#': './music/fs.wav',
+        'G': './music/g.wav',
+        'G#': './music/gs.wav',
+        'A': './music/a.wav',
+        'A#': './music/bb.wav',
+        'B': './music/b.wav'
     }
-    let musicfiles = Object.keys(keys).map(e=>new Audio(keys[e]));
-    class Matrix{
-        constructor(height,width){
+    let musicfiles = Object.keys(keys).map(e => new Audio(keys[e]));
+    class Matrix {
+        constructor(height, width, values) {
             this.rows = height;
             this.columns = width;
-            this.values =  new Array(this.rows*this.columns).fill(0);
+            this.values = values;
         }
-        get(x,y){
-            return this.values[x+y*this.columns];
+        get(x, y) {
+            return this.values[x + y * this.columns];
         }
-        set(x,y,value){
-            this.values[x+y*this.columns] = value;
+        set(x, y, value) {
+            let copy = this.values.slice();
+            copy[x + y * this.columns] = value;
+            return new Matrix(this.rows, this.columns, copy);
+        }
+        static empty(height, width) {
+            return new Matrix(height, width, new Array(height * width).fill(0));
         }
     }
-    class MusicMachine{
-        constructor(width){
+    class MusicMachine {
+        constructor(width) {
             this.playing = false;
-            this.matrix = new Matrix(musicfiles.length,width);
+            this.matrix = Matrix.empty(musicfiles.length, width);
             this.position = 0;
         }
-        next(){
-            if(this.playing){
-                console.log("on column", this.position)
-                for(let [index,file] of musicfiles.entries()){
-                    if(this.matrix.get(this.position,index)){
-                        console.log("cell",index, "is active");
-                        file.load();  //resets the file
+        next() {
+            if (this.playing) {
+                for (let [index, file] of musicfiles.entries()) {
+                    if (this.matrix.get(this.position, index)) {
+                        file.load(); //resets the file
                         file.play();
                     }
                 }
-                this.position++;
-                this.position = this.position%this.matrix.columns;
+                this.position = (this.position + 1) % this.matrix.columns;
             }
         }
-        pause(){
-            if(this.interval){
+        pause() {
+            if (this.interval) {
                 clearInterval(this.interval);
             }
         }
+        static from(machine){
+            let width = machine.matrix.columns;
+            let m = new MusicMachine(width);
+            m.playing = machine.playing;
+            m.matrix = machine.matrix;
+            m.position = machine.position;
+            m.timer = machine.timer ? machine.timer : null;
+            return m;
+        }
     }
-    function createTest(...numbers){
-        let test = new MusicMachine(numbers.length);
-        for(let [ind,i] of numbers.entries()){
-            if(typeof i!=='number'){
-                for(let val of i){
-                    test.matrix.set(ind,val,1)
+
+    function elt(name, attrs = {}, ...elements) {
+        let element = document.createElement(name);
+        for (let attr of Object.keys(attrs)) {
+            element.setAttribute(attr, attrs[attr]);
+        }
+        for (let e of elements) {
+            if (typeof e == 'string')
+                element.appendChild(document.createTextNode(e));
+            else
+                element.appendChild(e);
+        }
+        return element;
+    }
+    class MachineDisplay{
+        constructor(machine,parent){
+            this.machine = machine;
+            this.machine.playing = true;
+            this.boxes = machine.matrix.values.map((a,ind)=>{
+                let x = elt('div',{class:'box'});
+                let xpos = ind%machine.matrix.columns;
+                let ypos = (ind-xpos)/machine.matrix.columns;
+                x.addEventListener('click',()=>{
+                    let req = {matrix:this.machine.matrix.set(xpos,ypos,!this.machine.matrix.get(xpos,ypos))};
+                    this.requestStateChange(req);
+                });
+                return x;
+            });
+            let boxcont = elt('div',{class:'gridboxes'},...this.boxes);
+            boxcont.style.width = `${40*machine.matrix.columns}px`;
+            let keyboxes = elt('div',{class:'keys'},...Object.keys(keys).map(a=>elt('div',{class:'key'},a)));
+            let pauseplay = elt('div',{class:'pauseplay'});
+            this.dom = elt('div',{class:'machine'},keyboxes,boxcont,pauseplay);
+            this.dom.style.setProperty('--scale','40px');
+            parent.appendChild(this.dom);
+            this.syncState(this.machine);
+            pauseplay.addEventListener('click',(e)=>{
+                pauseplay.classList.toggle('playing');
+                if(this.machine.timer){
+                    clearInterval(this.machine.timer);
+                    this.machine.timer = null;
+                }
+                else{
+                    this.machine.timer = setInterval(()=>{
+                        let oldMachine = {...this.machine};
+                        this.machine.next();
+                        this.syncState(this.machine,oldMachine);
+                    },300);
+                }
+            })
+        }
+        syncState(newState,oldState=null){
+            for(let x=0;x<newState.matrix.columns;x++){
+                for(let y=0;y<newState.matrix.rows;y++){
+                    if(oldState){
+                        if(oldState.matrix.get(x,y)==newState.matrix.get(x,y)&&newState.position!=x&&oldState.position!=x) continue;
+                    } 
+                    let classNames = ['box'];
+                    let v = newState.matrix.get(x,y);
+                    if(v) classNames.push('active');
+                    if(x==newState.position) classNames.push('playing');
+                    this.boxes[x+y*newState.matrix.columns].setAttribute('class',classNames.join(' '));
                 }
             }
-            else if(i!==-1) test.matrix.set(ind,i,1);
         }
-        mountMachine(test,document.querySelector('#mountpoint'),play);
-        function play(){
-            return setInterval(()=>{
-                mountMachine(test,document.querySelector('#mountpoint'),play);
-                test.next();
-            },500);
+        requestStateChange(change){
+            let oldState = this.machine;
+            let newState = Object.assign({},oldState,change);
+            this.syncState(newState,oldState);
+            this.machine = MusicMachine.from(newState);    
         }
     }
-    function mountMachine(m,node,play){
-        function elt(name,attrs={},...elements){
-            let element = document.createElement(name);
-            if(attrs.text) element.appendChild(document.createTextNode(attrs.text));
-            for(let attr of Object.keys(attrs)){
-                element.setAttribute(attr,attrs[attr]);
+    let machine = new MusicMachine(30);
+    let md = new MachineDisplay(machine,document.body);
+`   class MachineDOM {
+        constructor(machine, parent) {
+            this.machine = machine;
+            let scale = 40;
+            let grid = elt('div', {
+                class: 'gridboxes'
+            });
+            for (let y = 0; y < machine.matrix.rows; y++) {
+                for (let x = 0; x < machine.matrix.columns; x++) {
+                    let box = 
+                }
             }
-            for(let e of elements){
-                element.appendChild(e);
-            }
-            return element;
+            grid.style.setProperty('--scale', scale + 'px');
+            grid.style.width = 
+            this.grid = grid;
+            this.dom = elt('div', {
+                class: 'machine'
+            }, this.grid);
+            parent.appendChild(this.dom);
         }
-        let btnscale = 40;
-        let musiccols = elt('div',{class:'musiccols'});
-        for(let keyname of Object.keys(keys)){
-            musiccols.appendChild(elt('div',{class:'key',text:keyname,style:`width:${btnscale}px;height:${btnscale}px`}));
-        }
-        let buttons = elt('div',{class:'buttons'});
-        let pause = elt('div',{class:`pauseplay ${(m.playing?"playing":"")}`});
-        pause.addEventListener('click',()=>{
-            pause.classList.toggle('playing')
-            if(m.interval){
-                debugger;
-                clearInterval(m.interval);
-                delete m.interval;
-            } 
-            else{
-                m.playing = true;
-                m.interval = play();
-            }
+    }
+    function getClassName(x, y, machine) {
+        let classNames = ['box'];
+        let v = machine.matrix.get(x, y);
+        if (v == 1) classNames.push('active');
+        if (machine.position == x) classNames.push('playing');
+        return classNames.join(' ');
+    }
+    function boxFrom(x, y, machine) {
+        let v = machine.matrix.get(x, y)
+        let box = elt('div', {
+            class: getClassName(x,y,machine)
         });
-        let machine = elt('div',{class:'music-machine'},musiccols,buttons,pause);
-        buttons.style.width = btnscale*m.matrix.columns+'px'
-        for(let y=0;y<m.matrix.rows;y++){
-            for(let x=0;x<m.matrix.columns;x++){
-                let button = elt('div',{class:m.matrix.get(x,y)?x==m.position?'btn active playing':'btn active':x==m.position?'btn playing':'btn'});
-                button.style.width = btnscale+'px';
-                button.style.height = btnscale+'px';
-                buttons.appendChild(button);
-                button.addEventListener('click',()=>{
-                    let v = m.matrix.get(x,y)
-                    if(v==1){
-                        m.matrix.set(x,y,0)
-                    }
-                    else{
-                        m.matrix.set(x,y,1)
-                    }
-                    button.classList.toggle('active')
-                });
-            }
-        }
-        while(node.lastChild){node.removeChild(node.lastChild)}
-        node.appendChild(machine)
+        let renderbox = (function (x, y, machine) {
+                let v = !machine.matrix.get(x, y);
+                machine.matrix = machine.matrix.set(x, y, v);
+                box.setAttribute('class', getClassName(x, y, machine))
+        })
+        box.addEventListener('click', (e)=>renderbox);
+        return box;
     }
-    createTest(0,0,2,-1,0,-1,5,-1,4,-1)
+    let m = new MachineDOM(new MusicMachine(30), document.body);`;
