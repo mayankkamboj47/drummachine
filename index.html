@@ -14,6 +14,7 @@
             .gridboxes{
                 display:flex;
                 flex-direction: column;
+                overflow-x:auto;
             }
             .boxrow{
                 display:flex;
@@ -25,6 +26,8 @@
                 background-color: whitesmoke;
                 border:1px solid transparent;
                 background-clip:content-box;
+                flex-grow:0;
+                flex-shrink: 0;
             }
             .box.active{
                 background-color: black;
@@ -45,7 +48,7 @@
                 bottom:0;
                 margin-left:auto;
             }
-            .pauseplay::after{
+            .pauseplay.playing::after{
                 position: absolute;
                 top:50%;
                 left:50%;
@@ -57,9 +60,7 @@
                 box-sizing: border-box;
                 border:25px solid black;
             }
-            .pauseplay.playing{
-            }
-            .pauseplay.playing::after{
+            .pauseplay::after{
                 position: absolute;
                 top:50%;
                 left:50%;
@@ -76,7 +77,6 @@
                 display:flex;
             }
             .machinemount{
-                overflow:auto;
             }
             .key{
                 display:flex;
@@ -88,6 +88,12 @@
                 color:white;
                 height:var(--scale);
                 width:var(--scale);
+            }
+            .key.sharp{
+                background-color:rgb(78, 193, 238);
+                font-style:italic;
+                font-weight: lighter;
+                font-size:0.7rem;
             }
         </style>
     </head>
